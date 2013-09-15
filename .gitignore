@@ -1,1 +1,12 @@
+# osx noise
 .DS_Store
+profile
+
+# webstorm noise
+.idea
+*.iml
+
+node_modules
+grunt-s3.json
+.grunt
+_SpecRunner.html
