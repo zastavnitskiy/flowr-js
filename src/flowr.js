@@ -49,14 +49,17 @@
         this.src_ = options.src;
         this.width_ = options.width;
         this.height_ = options.height;
-        this.$element_ = $(this.html()).get(0);
+        this.originalWidth_ = options.width;
+        this.originalHeight_ = options.height;
+        this.ratio_ = this.originalWidth_ / this.originalHeight_;
+        this.element_ = $(this.html()).get(0);
     }
 
     Flower.prototype = {
         constructor: Flower,
 
         html: function(){
-            return ["<div class='flowr-item' style='width: ", this.width(), "px; height: ", this.height(), "px;'>", "<img src='", this.src() ,"'>", "</div>"].join("");
+            return ["<div class='flowr-item' style='width: ", this.width(), "px; height: ", this.height(), "px;'>", "<img class='flowr-inner' src='", this.src() ,"'>", "</div>"].join("");
         },
 
         src: function(src){
@@ -72,6 +75,8 @@
         width: function(width) {
             if (width && width > 0) {
                 this.width_ = width;
+                this.height_ = width / this.ratio_;
+                this.updateHtml_();
                 return this;
             }
 
@@ -80,8 +85,11 @@
 
 
         height: function(height){
+            log("height", height);
             if (height && height > 0) {
                 this.height_ = height;
+                this.width_ = height * this.ratio_;
+                this.updateHtml_();
                 return this;
             }
 
@@ -89,7 +97,14 @@
         },
 
         element: function(){
-            return this.$element_;
+            return this.element_;
+        },
+
+        updateHtml_: function(){
+            $(this.element_).css({
+                width: this.width_,
+                height: this.height_
+            });
         }
     }
 
@@ -128,9 +143,13 @@
         //get sizes
         var flowers = $.map(options.data, function(seed){ return flowerFactory(seed); }),
             elements;
-        console.log(flowers);
 
-        //initial rendering
+        each(flowers, function(flower, index){
+            console.log(flower, index);
+            flower.height(options.minHeight);
+        });
+
+        // rendering
         elements = reduce(flowers, function(memo, flower, index, flowers){
             memo.push(flower.element());
             return memo;
