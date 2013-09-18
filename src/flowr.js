@@ -44,8 +44,35 @@
         return memo;
     };
 
+    function throttle(func, wait, options) {
+        var context, args, result;
+        var timeout = null;
+        var previous = 0;
+        options || (options = {});
+        var later = function() {
+            previous = options.leading === false ? 0 : new Date;
+            timeout = null;
+            result = func.apply(context, args);
+        };
+        return function() {
+            var now = new Date;
+            if (!previous && options.leading === false) previous = now;
+            var remaining = wait - (now - previous);
+            context = this;
+            args = arguments;
+            if (remaining <= 0) {
+                clearTimeout(timeout);
+                timeout = null;
+                previous = now;
+                result = func.apply(context, args);
+            } else if (!timeout && options.trailing !== false) {
+                timeout = setTimeout(later, remaining);
+            }
+            return result;
+        };
+    };
+
     function Flower(options){
-        console.log("new flower", options);
         this.src_ = options.src;
         this.width_ = options.width;
         this.height_ = options.height;
@@ -72,10 +99,12 @@
         },
 
 
-        width: function(width) {
+        width: function(width, opts) {
             if (width && width > 0) {
                 this.width_ = width;
-                this.height_ = width / this.ratio_;
+                if (!opts || !(opts && opts.relative === false)) {
+                    this.height_ = Math.floor(width / this.ratio_);
+                }
                 this.updateHtml_();
                 return this;
             }
@@ -84,11 +113,14 @@
         },
 
 
-        height: function(height){
-            log("height", height);
+        height: function(height, opts){
             if (height && height > 0) {
                 this.height_ = height;
-                this.width_ = height * this.ratio_;
+
+                if (!opts || opts && opts.relative === false) {
+                    this.width_ = Math.floor(height * this.ratio_);
+                }
+
                 this.updateHtml_();
                 return this;
             }
@@ -129,7 +161,48 @@
         return flower || false;
     }
 
-    function Row(){}
+    function Row(options){
+        this.storage_ = [];
+        this.width_ = options.width;
+    }
+
+    Row.prototype = {
+        constructor: Row,
+        addFlower: function(flower) {
+            if (this.flowersWidth() + flower.width() <= this.width()) {
+                this.storage_.push(flower);
+                return true;
+            } else {
+                return false;
+            }
+
+        },
+
+        flowersWidth: function() {
+            return reduce(this.storage_, function(memo, flower){
+                return memo + flower.width();
+            }, 0);
+        },
+
+        width: function(){
+            return this.width_;
+        },
+
+        fitWidth: function(){
+
+            var ratio = this.width() / this.flowersWidth(),
+                height = Math.floor(this.storage_[0].height() * ratio);
+
+            each(this.storage_, function(flower){
+                flower.height(height);
+            });
+
+            if (this.width() - this.flowersWidth() < 5) {
+                this.storage_[0].width(this.storage_[0].width() + (this.width() - this.flowersWidth()), { relative: false });
+            }
+
+        }
+    }
 
 
     /**
@@ -139,28 +212,61 @@
      * @constructor
      */
     function Flowr($element, options){
-        log("new Flowr", $element, options);
         //get sizes
-        var flowers = $.map(options.data, function(seed){ return flowerFactory(seed); }),
-            elements;
+        var that = this,
+            flowers = this.flowers = $.map(options.data, function(seed){ return flowerFactory(seed); }),
+            elements,
+            containerWidth = $("#imageContainer").width(),
+            $wrapper = $("<div class='elements-wrapper'></div>");
 
-        each(flowers, function(flower, index){
-            console.log(flower, index);
-            flower.height(options.minHeight);
-        });
+        this.options = options;
+
+
+        this.calculateRows(containerWidth);
 
         // rendering
         elements = reduce(flowers, function(memo, flower, index, flowers){
             memo.push(flower.element());
             return memo;
         }, []);
-        $element.append(elements);
 
+        $wrapper.css("width", containerWidth);
+        $wrapper.append(elements);
+        $element.append($wrapper);
 
-        //get container size
-        //do calculations
-        //render
+        $(window).resize(throttle(function(){
+            var width = $element.width();
+            $wrapper.css("width", width);
+            that.calculateRows(width);
+        }, 300));
+    }
 
+    Flowr.prototype.calculateRows = function(width) {
+        var rows = [],
+            row,
+            flowers = this.flowers,
+            options = this.options;
+
+        row = new Row({
+            width: width
+        });
+
+        each(flowers, function(flower) {
+            //resize flower to fit minHeight
+            flower.height(options.minHeight);
+
+            if (!row.addFlower(flower)) {
+                row.fitWidth();
+                rows.push(row);
+
+                //here we assume, that flower will fit the new row
+                //rethink this, probably there is a better solution
+                row = new Row({
+                    width: width
+                });
+                row.addFlower(flower);
+            }
+        });
     }
 
     $.fn.flowr = function(opts){
