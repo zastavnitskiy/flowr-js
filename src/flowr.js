@@ -105,7 +105,9 @@
                 if (!opts || !(opts && opts.relative === false)) {
                     this.height_ = Math.floor(width / this.ratio_);
                 }
-                this.updateHtml_();
+                if (!opts || !(opts && opts.updateHtml === false)) {
+                    this.updateHtml_();
+                }
                 return this;
             }
 
@@ -117,11 +119,13 @@
             if (height && height > 0) {
                 this.height_ = height;
 
-                if (!opts || opts && opts.relative === false) {
+                if (!opts || !(opts && opts.relative === false)) {
                     this.width_ = Math.floor(height * this.ratio_);
                 }
 
-                this.updateHtml_();
+                if (!opts || !(opts && opts.updateHtml === false)) {
+                    this.updateHtml_();
+                }
                 return this;
             }
 
@@ -137,6 +141,11 @@
                 width: this.width_,
                 height: this.height_
             });
+        },
+
+        update: function(){
+            this.updateHtml_();
+            return this;
         }
     }
 
@@ -194,11 +203,11 @@
                 height = Math.floor(this.storage_[0].height() * ratio);
 
             each(this.storage_, function(flower){
-                flower.height(height);
+                flower.height(height, { updateHtml: false });
             });
 
             if (this.width() - this.flowersWidth() < 5) {
-                this.storage_[0].width(this.storage_[0].width() + (this.width() - this.flowersWidth()), { relative: false });
+                this.storage_[0].width(this.storage_[0].width() + (this.width() - this.flowersWidth()), { relative: false, updateHtml: false });
             }
 
         }
@@ -266,6 +275,10 @@
                 });
                 row.addFlower(flower);
             }
+        });
+
+        each(flowers, function(flower) {
+            flower.update();
         });
     }
 
