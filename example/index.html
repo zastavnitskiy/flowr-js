@@ -4,19 +4,44 @@
 	<script type="text/javascript" src="../src/flowr.js"></script>
 	<link rel="stylesheet" type="text/css" href="style.css">
 	<style type="text/css">
-	.image-block {
-		display: inline-block;
-	}
+        body {
+            background: #444;
+        }
+
+
+        .flowr {
+            border: 2px solid #fff;
+            overflow: hidden;
+        }
+
+        .flowr-items {
+
+            overflow: hidden;
+            margin-bottom: -2px;
+
+        }
 
         .flowr-item {
-            display: inline-block;
+            float: left;
             /*-webkit-transition: all 218ms ease-in-out;*/
             /*transition: all 218ms ease-in-out;*/
         }
 
-        .flowr-item .flowr-inner {
+        .flowr-item-img {
             width: 100%;
             height: 100%;
+
+            border-style: solid;
+            border-color: #fff;
+            border-width: 0 2px 2px 0;
+
+            box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            -webkit-box-sizing: border-box;
+        }
+
+        .flowr-item-s-last-in-row .flowr-item-img {
+            border-right-width: 0;
         }
 	</style>
 </head>
@@ -40,8 +65,8 @@ $(document).ready(function(){
 	$.get("data/images1.json", function(jsonContent) {
 		$("#imageContainer").flowr({
 			data : jsonContent,
-			minHeight : 240,
-            maxHeight: 280,
+			minHeight : 150,
+            maxHeight: 200,
 			render : function(params) {
 				// Just return a div, string or a dom object, anything works fine
 				img = $("<img />").attr({

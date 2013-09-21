@@ -7,7 +7,20 @@
     var breaker = {},
         ArrayProto = Array.prototype,
         nativeForEach = ArrayProto.forEach,
-        nativeReduce = ArrayProto.reduce;
+        nativeReduce = ArrayProto.reduce,
+        namespace = "flowr";
+
+    function getClassName(name) {
+        if (!name) {
+            return namespace;
+        } else {
+            return namespace + "-" + name;
+        }
+    }
+
+    function getSelector(name, type) {
+        return (type || ".") + getClassName(name);
+    }
 
     function each(obj, iterator, context) {
         if (obj == null) return;
@@ -80,13 +93,14 @@
         this.originalHeight_ = options.height;
         this.ratio_ = this.originalWidth_ / this.originalHeight_;
         this.element_ = $(this.html()).get(0);
+        this.states_ = [];
     }
 
     Flower.prototype = {
         constructor: Flower,
 
         html: function(){
-            return ["<div class='flowr-item' style='width: ", this.width(), "px; height: ", this.height(), "px;'>", "<img class='flowr-inner' src='", this.src() ,"'>", "</div>"].join("");
+            return ["<div class='" + getClassName("item") + "' style='width: ", this.width(), "px; height: ", this.height(), "px;'>", "<img class='" + getClassName("item-img") + "' src='", this.src() ,"'>", "</div>"].join("");
         },
 
         src: function(src){
@@ -137,15 +151,40 @@
         },
 
         updateHtml_: function(){
-            $(this.element_).css({
+            var $el = $(this.element_), state;
+            $el.css({
                 width: this.width_,
                 height: this.height_
             });
+
+            for (state in this.states_) {
+                if (this.states_.hasOwnProperty(state)) {
+                    $el.toggleClass(getClassName("item-s-" + state), this.states_[state]);
+                }
+            }
         },
 
         update: function(){
             this.updateHtml_();
             return this;
+        },
+
+        setState: function(state, opts) {
+            this.states_[state] = true;
+            if (!opts || !(opts && opts.updateHtml === false)) {
+                this.updateHtml_();
+            }
+        },
+
+        removeState: function(state, opts) {
+            this.states_[state] = false;
+            if (!opts || !(opts && opts.updateHtml === false)) {
+                this.updateHtml_();
+            }
+        },
+
+        isState: function(state){
+            return state && this.states_[state] || false;
         }
     }
 
@@ -204,11 +243,16 @@
 
             each(this.storage_, function(flower){
                 flower.height(height, { updateHtml: false });
+                flower.isState("last-in-row") && flower.removeState("last-in-row", { updateHtml: false });
             });
 
-            if (this.width() - this.flowersWidth() < 5) {
+            //adjust first image to compensate pricision differencies
+            if (this.width() !== this.flowersWidth()) {
                 this.storage_[0].width(this.storage_[0].width() + (this.width() - this.flowersWidth()), { relative: false, updateHtml: false });
             }
+
+            //set last-in-row state for last item in row
+            this.storage_[this.storage_.length - 1].setState("last-in-row", { updateHtml: false })
 
         }
     }
@@ -225,11 +269,10 @@
         var that = this,
             flowers = this.flowers = $.map(options.data, function(seed){ return flowerFactory(seed); }),
             elements,
-            containerWidth = $("#imageContainer").width(),
-            $wrapper = $("<div class='elements-wrapper'></div>");
+            containerWidth = options.width,
+            $wrapper = $("<div class='" + getClassName("items") + "'></div>");
 
         this.options = options;
-
 
         this.calculateRows(containerWidth);
 
@@ -239,7 +282,8 @@
             return memo;
         }, []);
 
-        $wrapper.css("width", containerWidth);
+        $element.addClass(getClassName());
+        $wrapper.width(containerWidth);
         $wrapper.append(elements);
         $element.append($wrapper);
 
@@ -290,11 +334,13 @@
                 flowr = flowrData.flowr;
 
             if (!flowr) {
-
                 new Flowr($flowr, $.extend(
                     {},
                     {
-                        //defaults
+                        'minHeight' : 150,					// Minimum height an image row should take
+                        'maxHeight' : 200,					// Minimum height an image row should take
+                        'maxScale' : 1.5,				// not-implemented In case there is only 1 elment in last row
+                        'width' : $(this).width()
                     },
                     opts
                 ));
