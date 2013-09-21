@@ -219,6 +219,9 @@
         addFlower: function(flower) {
             if (this.flowersWidth() + flower.width() <= this.width()) {
                 this.storage_.push(flower);
+                if (!this.height_) {
+                    this.height_ = flower.height();
+                }
                 return true;
             } else {
                 return false;
@@ -236,6 +239,10 @@
             return this.width_;
         },
 
+        height: function() {
+            return this.height_;
+        },
+
         fitWidth: function(){
 
             var ratio = this.width() / this.flowersWidth(),
@@ -246,7 +253,7 @@
                 flower.isState("last-in-row") && flower.removeState("last-in-row", { updateHtml: false });
             });
 
-            //adjust first image to compensate pricision differencies
+            //adjust first image to compensate precision differences
             if (this.width() !== this.flowersWidth()) {
                 this.storage_[0].width(this.storage_[0].width() + (this.width() - this.flowersWidth()), { relative: false, updateHtml: false });
             }
@@ -254,6 +261,12 @@
             //set last-in-row state for last item in row
             this.storage_[this.storage_.length - 1].setState("last-in-row", { updateHtml: false })
 
+            this.ratio_ = ratio;
+            this.height_ = height;
+        },
+
+        countFlowers: function() {
+            return this.storage_.length;
         }
     }
 
@@ -320,6 +333,25 @@
                 row.addFlower(flower);
             }
         });
+
+        //todo: optimise resising of last row. currenly do nothing
+        if (row.countFlowers() > 0) {
+            log(row.height());
+            log(row.width() / row.flowersWidth());
+            log(row.height() * (row.width() / row.flowersWidth()));
+
+            if (row.height() * (row.width() / row.flowersWidth()) < options.maxHeight) {
+                row.fitWidth();
+                rows.push(row);
+            }
+
+        }
+//
+//        if (row.height() > options.maxHeight) {
+//            log("last row height it too big");
+//
+//        }
+
 
         each(flowers, function(flower) {
             flower.update();
