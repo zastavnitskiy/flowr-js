@@ -319,7 +319,7 @@
 
         each(flowers, function(flower) {
             //resize flower to fit minHeight
-            flower.height(options.minHeight);
+            flower.height( options.minHeight + (options.maxHeight - options.minHeight) / 2); //todo: move optimal height to a separate variable
 
             if (!row.addFlower(flower)) {
                 row.fitWidth();
@@ -330,6 +330,7 @@
                 row = new Row({
                     width: width
                 });
+
                 row.addFlower(flower);
             }
         });
