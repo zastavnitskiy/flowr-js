@@ -1,0 +1,34 @@
+.flowr {
+    border: 2px solid #fff;
+    overflow: hidden;
+}
+
+.flowr-items {
+
+    overflow: hidden;
+    margin-bottom: -2px;
+
+}
+
+.flowr-item {
+    float: left;
+    /*-webkit-transition: all 218ms ease-in-out;*/
+    /*transition: all 218ms ease-in-out;*/
+}
+
+.flowr-item-img {
+    width: 100%;
+    height: 100%;
+
+    border-style: solid;
+    border-color: #fff;
+    border-width: 0 2px 2px 0;
+
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+}
+
+.flowr-item-s-last-in-row .flowr-item-img {
+    border-right-width: 0;
+}
